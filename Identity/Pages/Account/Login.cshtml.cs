@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using IdentityDemo.Identity.Account;
 using IdentityDemo.Pages.Account;
-using DemoIdentity.Identity;
+using IdentityDemo.Identity;
 
 namespace IdentityDemo.Pages.Account
 {

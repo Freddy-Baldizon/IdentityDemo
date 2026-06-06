@@ -8,18 +8,20 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace IdentityDemo.Identity.Account;
 
-[AllowAnonymous]
 public class RegisterModel : PageModel
 {
     private readonly UserManager<MyUser> _userManager;
+    private readonly SignInManager<MyUser> _signInManager;
 
     [BindProperty]
     public RegisterDTO Register { get; set; }
     public string ReturnUrl { get; set; }
 
-    public RegisterModel(UserManager<MyUser> userManager)
-    =>
+    public RegisterModel(UserManager<MyUser> userManager, SignInManager<MyUser> signInManager)
+    {
         _userManager = userManager;
+        _signInManager = signInManager;
+    }
 
     public void OnGet()
     {
@@ -27,21 +29,39 @@ public class RegisterModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Register.Password != Register.Password2)
+        if (!ModelState.IsValid)
         {
-            throw new Exception("Passwords no coinciden");
+            return Page();
         }
 
-        var user = new MyUser();
-        user.NroLegajo = Register.Legajo;
-        user.Email = Register.Email;
-        user.UserName = Register.Email;
+        if (Register.Password != Register.Password2)
+        {
+            ModelState.AddModelError(string.Empty, "Passwords no coinciden");
+            return Page();
+        }
 
+        var user = new MyUser
+        {
+            NroLegajo = Register.Legajo,
+            Email = Register.Email,
+            UserName = Register.Email
+        };
 
-        var res = await _userManager
-            .CreateAsync(user, Register.Password);
+        var res = await _userManager.CreateAsync(user, Register.Password);
 
-        if (ReturnUrl == null)
+        if (!res.Succeeded)
+        {
+            foreach (var err in res.Errors)
+            {
+                ModelState.AddModelError(string.Empty, err.Description);
+            }
+            return Page();
+        }
+
+        // Opcional: iniciar sesión después de registrarse
+        await _signInManager.SignInAsync(user, isPersistent: false);
+
+        if (string.IsNullOrEmpty(ReturnUrl))
         {
             ReturnUrl = "/";
         }
